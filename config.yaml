@@ -1,0 +1,15 @@
+dns:
+listen_host: "0.0.0.0"
+listen_port: 5353
+upstream_dns: "1.1.1.1"
+upstream_port: 53
+sinkhole_ip: "0.0.0.0"
+
+blocking:
+block_domains:
+  -"ads.example.com"
+
+privacy:
+mode: "strict"
+logging_enabled: false
+retention_days: 7
