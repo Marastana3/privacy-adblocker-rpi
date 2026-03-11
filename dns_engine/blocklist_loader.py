@@ -4,17 +4,11 @@ from pathlib import Path
 from typing import Dict, Set
 
 
-def load_blocklists(blocklists_dir: str) -> Dict[str, Set[str]]:
-    """
-    Load domain blocklists from text files inside the given directory.
+def _normalize(domain: str) -> str:
+    return domain.strip().lower().rstrip(".")
 
-    Returns:
-        {
-            "ads": {"doubleclick.net", ...},
-            "trackers": {...},
-            "telemetry": {...}
-        }
-    """
+
+def load_blocklists(blocklists_dir: str) -> Dict[str, Set[str]]:
     result: Dict[str, Set[str]] = {}
     directory = Path(blocklists_dir)
 
@@ -27,12 +21,12 @@ def load_blocklists(blocklists_dir: str) -> Dict[str, Set[str]]:
 
         with file_path.open("r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip().lower()
+                line = line.strip()
 
                 if not line or line.startswith("#"):
                     continue
 
-                domains.add(line.rstrip("."))
+                domains.add(_normalize(line))
 
         result[category] = domains
 

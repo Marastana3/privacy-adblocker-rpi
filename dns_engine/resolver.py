@@ -54,6 +54,10 @@ class PrivacyAdblockResolver(BaseResolver):
 
         decision = self.block_engine.is_blocked(qname)
 
+        if decision.category == "whitelist":
+            print(f"[WHITELISTED] domain={qname} type={qtype} reason={decision.reason}")
+            return self.forwarder.forward(request)
+
         if decision.blocked and qtype == "A":
             print(f"[BLOCKED] domain={qname} type={qtype} category={decision.category} reason={decision.reason}")
             reply = DNSRecord(
