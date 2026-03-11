@@ -1,0 +1,4 @@
+telemetry.example.com
+app-measurement.com
+settings-win.data.microsoft.com
+browser.events.data.msn.com

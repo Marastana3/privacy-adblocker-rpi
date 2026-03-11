@@ -1,0 +1,5 @@
+google-analytics.com
+analytics.google.com
+segment.io
+mixpanel.com
+hotjar.com

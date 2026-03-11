@@ -1,0 +1,5 @@
+ads.example.com
+doubleclick.net
+googlesyndication.com
+googleadservices.com
+adservice.google.com
