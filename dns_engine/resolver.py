@@ -1,4 +1,5 @@
 from __future__ import annotations
+from privacy.privacy_modes import get_mode
 
 import os
 import time
@@ -22,6 +23,7 @@ class AppConfig:
     upstream_port: int
     sinkhole_ip: str
     blocklists_dir: str
+    privacy_mode: str
 
 
 def load_config(path: str) -> AppConfig:
@@ -32,13 +34,14 @@ def load_config(path: str) -> AppConfig:
     blocking = raw.get("blocking", {})
 
     return AppConfig(
-        listen_host=str(dns.get("listen_host", "0.0.0.0")),
-        listen_port=int(dns.get("listen_port", 5300)),
-        upstream_dns=str(dns.get("upstream_dns", "1.1.1.1")),
-        upstream_port=int(dns.get("upstream_port", 53)),
-        sinkhole_ip=str(dns.get("sinkhole_ip", "0.0.0.0")),
-        blocklists_dir=str(blocking.get("blocklists_dir", "dns_engine/blocklists")),
-    )
+    listen_host=str(dns.get("listen_host", "0.0.0.0")),
+    listen_port=int(dns.get("listen_port", 5300)),
+    upstream_dns=str(dns.get("upstream_dns", "1.1.1.1")),
+    upstream_port=int(dns.get("upstream_port", 53)),
+    sinkhole_ip=str(dns.get("sinkhole_ip", "0.0.0.0")),
+    blocklists_dir=str(blocking.get("blocklists_dir", "dns_engine/blocklists")),
+    privacy_mode=str(raw.get("privacy", {}).get("mode", "strict")),
+)
 
 
 class PrivacyAdblockResolver(BaseResolver):
@@ -85,7 +88,10 @@ def main():
     cfg_path = os.environ.get("PAB_CONFIG", os.path.join(repo_root, "config.yaml"))
 
     cfg = load_config(cfg_path)
-    resolver = PrivacyAdblockResolver(cfg)
+    resolver = PrivacyAdblockResolver(cfg, privacy_mode)
+
+    privacy_mode = get_mode(cfg.privacy_mode)
+    print(f"[PRIVACY] Mode: {privacy_mode.name}")
 
     server = DNSServer(
         resolver,
