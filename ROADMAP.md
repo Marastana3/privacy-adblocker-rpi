@@ -53,11 +53,16 @@ Integration note: today the API builds its own engine/store from config, sharing
 state with the DNS server via the list files + SQLite DB. Running both in one
 process (shared in-memory engine) is a Phase 5 deployment detail.
 
-## Phase 4 — React dashboard  ⬜
-- ⬜ Overview: queries over time, block rate, top blocked categories
-- ⬜ Controls: toggle categories, switch privacy mode, manage whitelist
-- ⬜ Consume the FastAPI backend
-- ⬜ (the `frontend/` folder already exists as a placeholder)
+## Phase 4 — React dashboard  ✅
+Vite + React app in `frontend/`. Built here but not run (no npm/browser in the
+build sandbox) — `npm install && npm run dev` on the Mac to launch it.
+
+- ✅ Overview: total/blocked/allowed + block-rate cards, auto-refreshing (`StatsCards`)
+- ✅ Controls: toggle categories, manage whitelist + custom blocklist (`Categories`, `DomainList`)
+- ✅ Privacy banner showing the active mode + retention disclosure
+- ✅ Consumes the FastAPI backend via `src/api.js` (base URL + optional API key)
+- ✅ Backend serves the built `frontend/dist` at `/` for single-process deploy; CORS for dev
+- ⬜ Nice-to-have later: queries-over-time chart, top-blocked table, privacy-mode switch UI
 
 ## Phase 5 — Deployment on the Raspberry Pi  ⬜
 - ⬜ Headless Pi boot + SSH access (see `pi-boot-and-first-dns-milestone.md`)

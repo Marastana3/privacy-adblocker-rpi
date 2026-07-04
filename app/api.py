@@ -12,6 +12,7 @@ import os
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.service import AdblockService, build_service_from_config
@@ -34,6 +35,15 @@ class BlockDomainIn(BaseModel):
 
 def create_app(service: AdblockService, api_key: Optional[str] = None) -> FastAPI:
     app = FastAPI(title="privacy-adblocker-rpi API", version="0.1.0")
+
+    # This runs as a LAN appliance and the dashboard is served from a different
+    # origin during development (Vite on :5173), so allow cross-origin calls.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     def require_key(x_api_key: Optional[str] = Header(default=None)) -> None:
         # Auth only enforced if an API key is configured; reads stay open.
@@ -111,6 +121,16 @@ def create_app(service: AdblockService, api_key: Optional[str] = None) -> FastAP
     @app.post("/blocklists/update", dependencies=write)
     def update_remote():
         return service.update_remote()
+
+    # If the dashboard has been built (frontend/dist), serve it at / so the Pi
+    # can run the API and UI from a single process. Mounted last so it never
+    # shadows the API routes above.
+    here = os.path.dirname(os.path.abspath(__file__))
+    dist = os.path.abspath(os.path.join(here, "..", "frontend", "dist"))
+    if os.path.isdir(dist):
+        from fastapi.staticfiles import StaticFiles
+
+        app.mount("/", StaticFiles(directory=dist, html=True), name="dashboard")
 
     return app
 

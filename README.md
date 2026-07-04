@@ -148,6 +148,28 @@ Write endpoints require the `X-API-Key` header when `PAB_API_KEY` is set. Logic
 lives in `app/service.py` (framework-agnostic, unit-tested); `app/api.py` is a
 thin wrapper.
 
+## Dashboard (React)
+
+A Vite + React dashboard in `frontend/` shows activity and manages categories,
+the whitelist, and a custom blocklist.
+
+```bash
+cd frontend
+npm install
+cp .env.example .env      # point VITE_API_BASE at the backend (default :8000)
+npm run dev               # http://localhost:5173
+```
+
+For a single-process deploy on the Pi, build it and let FastAPI serve it:
+
+```bash
+cd frontend && npm run build      # outputs frontend/dist
+uvicorn app.api:app --host 0.0.0.0 --port 8000   # serves the dashboard at /
+```
+
+If the API is started with `PAB_API_KEY`, enter that key in the dashboard header
+so write actions (toggles, add/remove) are authorized.
+
 ## Tests
 
 ```bash
