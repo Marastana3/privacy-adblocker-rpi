@@ -55,11 +55,19 @@ privacy:
 
 ### Privacy modes
 
-| Mode     | Console logs | Stores raw queries | Stores client IP |
-|----------|:------------:|:------------------:|:----------------:|
-| strict   | no           | no                 | no               |
-| balanced | yes (redacted domains) | no       | no               |
-| debug    | yes (full)   | yes                | yes              |
+| Mode     | Console logs | Stores raw queries | Stored client IP        |
+|----------|:------------:|:------------------:|:------------------------|
+| strict   | no           | no                 | none                    |
+| balanced | yes (redacted domains) | no       | truncated prefix (/24, /48) |
+| debug    | yes (full)   | yes                | full IP                 |
+
+Query events are persisted to SQLite (`privacy.db_path`), but every write is
+filtered through the active mode first: in strict mode rows keep only the
+aggregate facts (blocked yes/no, category, timestamp) — never the domain or the
+client IP. Events older than `retention_days` are pruned on startup and hourly.
+Aggregate stats and top-blocked domains are available via `QueryStore.stats()`
+and `QueryStore.top_blocked_domains()` (the latter is empty unless the mode
+stored raw domains).
 
 ## Requirements
 

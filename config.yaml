@@ -9,6 +9,7 @@ blocking:
   blocklists_dir: "dns_engine/blocklists"
 
 privacy:
-  mode: "strict"
+  mode: "strict"          # strict | balanced | debug
   logging_enabled: false
-  retention_days: 7
+  retention_days: 7        # events older than this are pruned automatically
+  db_path: "adblocker.db"  # relative paths resolve against the repo root

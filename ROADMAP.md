@@ -18,14 +18,14 @@ The resolver works but needs to be robust and tested before building on top of i
 - ⬜ Unit tests: block engine, blocklist loader, privacy modes, resolver decisions
 - ⬜ README with setup + run instructions
 
-## Phase 1 — Privacy layer  ⬜
-The privacy modes are defined but nothing stores or aggregates data yet. This is the thesis's core contribution.
+## Phase 1 — Privacy layer  ✅
+The privacy modes now drive exactly what gets persisted. This is the thesis's core contribution.
 
-- ⬜ Storage backend (SQLite) for query events + aggregated stats
-- ⬜ Anonymizer: GDPR-style client-IP handling (drop / truncate / hash per privacy mode)
-- ⬜ Aggregator: counts (total, blocked, per-category) without storing raw domains in strict mode
-- ⬜ Retention enforcement: honor `retention_days`, prune old rows on a schedule
-- ⬜ Tests proving strict mode persists no raw queries / no client IPs
+- ✅ Storage backend (SQLite) for query events + aggregated stats (`privacy/storage.py`)
+- ✅ Anonymizer: per-mode client-IP handling — drop / truncate (IPv4 /24, IPv6 /48) / raw (`privacy/anonymizer.py`)
+- ✅ Aggregator: counts (total, blocked, per-category) + top-blocked, without storing raw domains in strict/balanced
+- ✅ Retention enforcement: honor `retention_days`, prune on startup + hourly background thread
+- ✅ Tests proving strict persists no domain/IP, balanced truncates IP, debug stores both (verified live end-to-end)
 
 ## Phase 2 — Policy & consent layer  ⬜
 - ⬜ Per-category blocking toggles (enable/disable ads, trackers, telemetry independently)

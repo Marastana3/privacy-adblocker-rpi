@@ -1,5 +1,13 @@
 from dataclasses import dataclass
 
+# How a client's IP address is handled before anything is persisted:
+#   "none"     -> never store an IP
+#   "truncate" -> store only the network prefix (IPv4 /24, IPv6 /48), GDPR-style
+#   "raw"      -> store the full IP (debugging only)
+IP_POLICY_NONE = "none"
+IP_POLICY_TRUNCATE = "truncate"
+IP_POLICY_RAW = "raw"
+
 
 @dataclass(frozen=True)
 class PrivacyMode:
@@ -8,6 +16,7 @@ class PrivacyMode:
     store_client_ip: bool
     aggregate_stats: bool
     log_to_console: bool
+    client_ip_policy: str = IP_POLICY_NONE
 
 
 STRICT = PrivacyMode(
@@ -16,14 +25,16 @@ STRICT = PrivacyMode(
     store_client_ip=False,
     aggregate_stats=True,
     log_to_console=False,
+    client_ip_policy=IP_POLICY_NONE,
 )
 
 BALANCED = PrivacyMode(
     name="balanced",
     store_raw_queries=False,
-    store_client_ip=False,
+    store_client_ip=True,           # only the truncated network prefix, never the full IP
     aggregate_stats=True,
     log_to_console=True,
+    client_ip_policy=IP_POLICY_TRUNCATE,
 )
 
 DEBUG = PrivacyMode(
@@ -32,6 +43,7 @@ DEBUG = PrivacyMode(
     store_client_ip=True,
     aggregate_stats=True,
     log_to_console=True,
+    client_ip_policy=IP_POLICY_RAW,
 )
 
 

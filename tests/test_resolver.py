@@ -22,6 +22,8 @@ def make_resolver(mode="strict"):
         sinkhole_ip="0.0.0.0",
         blocklists_dir=BLOCKLISTS_DIR,
         privacy_mode=mode,
+        db_path=":memory:",
+        retention_days=7,
     )
     return PrivacyAdblockResolver(cfg, get_mode(mode))
 
