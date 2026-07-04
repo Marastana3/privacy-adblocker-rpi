@@ -1,0 +1,24 @@
+# Runs the ad-blocker (DNS resolver + dashboard API) in one container.
+#
+# host networking is used so the DNS server can serve the whole LAN on port 53.
+# Set privacy.db_path to "/data/adblocker.db" in config.yaml so the database
+# lands on the persistent volume below.
+#
+#   docker compose up -d --build
+#   PAB_API_KEY=your-secret docker compose up -d --build   # require API key on writes
+
+services:
+  adblocker:
+    build: .
+    container_name: privacy-adblocker
+    network_mode: host
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - ./dns_engine/blocklists:/app/dns_engine/blocklists   # persist list edits
+      - adblocker-data:/data                                 # sqlite database
+    environment:
+      - PAB_API_KEY=${PAB_API_KEY:-}
+    restart: unless-stopped
+
+volumes:
+  adblocker-data:

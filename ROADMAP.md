@@ -64,18 +64,22 @@ build sandbox) — `npm install && npm run dev` on the Mac to launch it.
 - ✅ Backend serves the built `frontend/dist` at `/` for single-process deploy; CORS for dev
 - ⬜ Nice-to-have later: queries-over-time chart, top-blocked table, privacy-mode switch UI
 
-## Phase 5 — Deployment on the Raspberry Pi  ⬜
-- ⬜ Headless Pi boot + SSH access (see `pi-boot-and-first-dns-milestone.md`)
-- ⬜ Free port 53 (disable `systemd-resolved` stub) + run resolver on 53
-- ⬜ Run as a `systemd` service (survives reboot)
-- ⬜ Fill in `docker-compose.yml` (currently empty) for containerized deploy
-- ⬜ Point a real client at the Pi and confirm end-to-end blocking
+## Phase 5 — Deployment on the Raspberry Pi  🔨
+Artifacts are ready; the Pi-side steps remain (need the hardware).
 
-## Phase 6 — Testing & evaluation (thesis)  ⬜
-- ⬜ Integration tests (full query → block/forward path)
-- ⬜ Evaluation: block effectiveness (% ads/trackers stopped), DNS latency, Pi CPU/RAM
-- ⬜ Privacy evaluation: demonstrate what each mode does/doesn't retain
-- ⬜ Write-up: architecture, methodology, results
+- ✅ Combined runner (`run.py`): DNS + API in one process, shared live state
+- ✅ `Dockerfile` (multi-stage: builds the dashboard, then the python runtime)
+- ✅ `docker-compose.yml` (host networking, persistent DB volume)
+- ✅ `deploy/adblocker.service` systemd unit + `deploy/README.md` install guide
+- ⬜ On the Pi: headless boot + SSH (see `pi-boot-and-first-dns-milestone.md`)
+- ⬜ On the Pi: free port 53, run on 53, point a real client, confirm blocking
+
+## Phase 6 — Testing & evaluation (thesis)  🔨
+- ✅ Integration tests: full query → block/forward path over real UDP (`tests/test_integration.py`)
+- ✅ Evaluation harness: block effectiveness + latency distribution (`scripts/evaluate.py`)
+- ✅ Privacy evaluation: tests demonstrate what each mode retains (Phase 1 storage tests)
+- ⬜ On the Pi: run evaluation under real traffic; capture CPU/RAM, latency vs. no-blocker
+- ⬜ Write-up: architecture, methodology, results (pull numbers from the harness)
 
 ---
 

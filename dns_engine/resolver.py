@@ -30,6 +30,8 @@ class AppConfig:
     db_path: str
     retention_days: int
     disabled_categories: List[str] = field(default_factory=list)
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
 
 
 def load_config(path: str) -> AppConfig:
@@ -39,6 +41,7 @@ def load_config(path: str) -> AppConfig:
     dns = raw.get("dns", {})
     blocking = raw.get("blocking", {})
     privacy = raw.get("privacy", {})
+    api = raw.get("api", {})
 
     return AppConfig(
         listen_host=str(dns.get("listen_host", "0.0.0.0")),
@@ -51,7 +54,38 @@ def load_config(path: str) -> AppConfig:
         db_path=str(privacy.get("db_path", "adblocker.db")),
         retention_days=int(privacy.get("retention_days", 7)),
         disabled_categories=list(blocking.get("disabled_categories", []) or []),
+        api_host=str(api.get("host", "0.0.0.0")),
+        api_port=int(api.get("port", 8000)),
     )
+
+
+def build_dns_server(
+    cfg: AppConfig, resolver: "PrivacyAdblockResolver", privacy_mode: PrivacyMode
+) -> DNSServer:
+    """Construct a DNSServer with a privacy-aware logger.
+
+    dnslib's default logger prints every request/reply (including the queried
+    domain), which would leak data in strict mode, so request/reply logging is
+    only enabled when the mode permits storing raw queries.
+    """
+    if privacy_mode.store_raw_queries:
+        dns_logger = DNSLogger("request,reply,truncated,error", prefix=False)
+    else:
+        dns_logger = DNSLogger("truncated,error", prefix=False)
+    return DNSServer(
+        resolver,
+        logger=dns_logger,
+        port=cfg.listen_port,
+        address=cfg.listen_host,
+        tcp=False,
+    )
+
+
+def resolve_db_path(cfg: AppConfig, repo_root: str) -> str:
+    db_path = cfg.db_path
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(repo_root, db_path)
+    return db_path
 
 
 class PrivacyAdblockResolver(BaseResolver):
@@ -182,32 +216,14 @@ def main():
     print(f"[PRIVACY] Mode: {privacy_mode.name}")
     print(f"[PRIVACY] Retention: {describe_retention(privacy_mode)}")
 
-    db_path = cfg.db_path
-    if not os.path.isabs(db_path):
-        db_path = os.path.join(repo_root, db_path)
+    db_path = resolve_db_path(cfg, repo_root)
     store = QueryStore(db_path, privacy_mode)
     removed = store.prune(cfg.retention_days)  # enforce retention on startup
     print(f"[PRIVACY] Store: {db_path} (retention {cfg.retention_days}d, pruned {removed})")
     _start_retention_pruner(store, cfg.retention_days)
 
     resolver = PrivacyAdblockResolver(cfg, privacy_mode, store)
-
-    # dnslib's DNSServer has its own logger that prints every request/reply
-    # (including the queried domain) by default. That would leak query data even
-    # in strict mode, so only enable its request/reply logging when the privacy
-    # mode allows storing raw queries; otherwise log errors only.
-    if privacy_mode.store_raw_queries:
-        dns_logger = DNSLogger("request,reply,truncated,error", prefix=False)
-    else:
-        dns_logger = DNSLogger("truncated,error", prefix=False)
-
-    server = DNSServer(
-        resolver,
-        logger=dns_logger,
-        port=cfg.listen_port,
-        address=cfg.listen_host,
-        tcp=False,
-    )
+    server = build_dns_server(cfg, resolver, privacy_mode)
     server.start_thread()
 
     print(f"[DNS] Listening on {cfg.listen_host}:{cfg.listen_port}")

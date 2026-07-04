@@ -1,0 +1,22 @@
+[Unit]
+Description=privacy-adblocker-rpi (DNS resolver + dashboard API)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/privacy-adblocker-rpi
+ExecStart=/opt/privacy-adblocker-rpi/.venv/bin/python run.py
+Environment=PAB_CONFIG=/opt/privacy-adblocker-rpi/config.yaml
+# Uncomment to require an API key on write endpoints:
+# Environment=PAB_API_KEY=change-me
+Restart=on-failure
+RestartSec=3
+
+# Binding UDP/53 needs privilege; grant just the capability rather than full root.
+User=adblocker
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

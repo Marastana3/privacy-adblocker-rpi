@@ -18,3 +18,8 @@ privacy:
   logging_enabled: false
   retention_days: 7        # events older than this are pruned automatically
   db_path: "adblocker.db"  # relative paths resolve against the repo root
+                           # (use "/data/adblocker.db" when running in Docker)
+
+api:
+  host: "0.0.0.0"          # HTTP API / dashboard (used by run.py)
+  port: 8000

@@ -148,6 +148,25 @@ Write endpoints require the `X-API-Key` header when `PAB_API_KEY` is set. Logic
 lives in `app/service.py` (framework-agnostic, unit-tested); `app/api.py` is a
 thin wrapper.
 
+## Run everything together
+
+`run.py` starts the DNS resolver and the HTTP API in one process, sharing a
+single engine/store so dashboard changes affect live DNS immediately:
+
+```bash
+python run.py            # DNS on config's dns.listen_port, API on api.port
+```
+
+For the Raspberry Pi (Docker or systemd), see [`deploy/README.md`](deploy/README.md).
+
+## Evaluation
+
+Measure block effectiveness and latency against a running resolver:
+
+```bash
+python scripts/evaluate.py --host 127.0.0.1 --port 5300 --samples 200
+```
+
 ## Dashboard (React)
 
 A Vite + React dashboard in `frontend/` shows activity and manages categories,
