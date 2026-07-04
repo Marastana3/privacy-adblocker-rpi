@@ -37,12 +37,21 @@ The privacy modes now drive exactly what gets persisted. This is the thesis's co
 - ✅ Consent/transparency: startup disclosure of exactly what the active mode
   retains (`describe_retention`)
 
-## Phase 3 — FastAPI backend  ⬜
-- ⬜ REST API: stats, block history (privacy-filtered), config, privacy-mode control
-- ⬜ Blocklist/whitelist management endpoints
-- ⬜ Wire API to the DNS engine + storage
-- ⬜ Basic auth for the dashboard
-- ⬜ API tests
+## Phase 3 — FastAPI backend  ✅
+Built as two layers: a framework-agnostic service (fully unit-tested) + a thin
+FastAPI wrapper. The service layer is verified live; the FastAPI layer needs
+`pip install -r requirements.txt` to run (syntax-checked here).
+
+- ✅ REST API: `/stats`, `/stats/top-blocked`, `/privacy` (`app/api.py`)
+- ✅ Blocklist/whitelist management endpoints (`/lists/...`) + category toggles
+  (`/categories/...`) + remote update (`/blocklists/update`)
+- ✅ Wire API to the DNS engine + storage (`app/service.py`, `build_service_from_config`)
+- ✅ Optional API-key auth on writes (`PAB_API_KEY`, `X-API-Key` header)
+- ✅ Service-layer tests (every method); FastAPI module syntax-checked
+
+Integration note: today the API builds its own engine/store from config, sharing
+state with the DNS server via the list files + SQLite DB. Running both in one
+process (shared in-memory engine) is a Phase 5 deployment detail.
 
 ## Phase 4 — React dashboard  ⬜
 - ⬜ Overview: queries over time, block rate, top blocked categories

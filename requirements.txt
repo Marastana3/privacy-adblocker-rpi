@@ -1,2 +1,4 @@
 dnslib == 0.9.26
 pyYAML == 6.0.2
+fastapi >= 0.110
+uvicorn[standard] >= 0.29

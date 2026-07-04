@@ -98,6 +98,17 @@ class BlockEngine:
     def remove_whitelisted(self, domain: str) -> None:
         self.whitelist.discard(_normalize(domain))
 
+    # -- read accessors (for the API / dashboard) ---------------------------
+
+    def whitelisted_domains(self) -> list:
+        return sorted(self.whitelist)
+
+    def blocked_by_category(self) -> Dict[str, list]:
+        grouped: Dict[str, list] = {}
+        for domain, category in self.blocked.items():
+            grouped.setdefault(category, []).append(domain)
+        return {cat: sorted(domains) for cat, domains in grouped.items()}
+
     # -- matching -----------------------------------------------------------
 
     def _match(self, domain: str, rules: Set[str]) -> Optional[str]:

@@ -119,6 +119,35 @@ held by `systemd-resolved` — free it first. See
 [`pi-boot-and-first-dns-milestone.md`](pi-boot-and-first-dns-milestone.md) for
 the full headless-Pi + port-53 walkthrough.
 
+## HTTP API (dashboard backend)
+
+A FastAPI app exposes the engine, stats, and policy controls for the dashboard.
+
+```bash
+pip install -r requirements.txt
+uvicorn app.api:app --host 0.0.0.0 --port 8000
+# require an API key on write endpoints:
+PAB_API_KEY=your-secret uvicorn app.api:app
+```
+
+| Method & path                 | Purpose                                  |
+|-------------------------------|------------------------------------------|
+| `GET /health`                 | liveness check                           |
+| `GET /stats`                  | total / blocked / allowed / by-category  |
+| `GET /stats/top-blocked`      | most-blocked domains (if mode stores them) |
+| `GET /privacy`                | active mode + retention disclosure       |
+| `GET /categories`             | categories and their enabled state       |
+| `POST /categories/{name}`     | enable/disable a category                |
+| `GET/POST /lists/whitelist`   | list / add allowed domains               |
+| `DELETE /lists/whitelist/{d}` | remove an allowed domain                 |
+| `GET/POST /lists/block`       | list / add blocked domains               |
+| `DELETE /lists/block/{d}`     | remove a blocked domain                  |
+| `POST /blocklists/update`     | fetch + merge configured remote sources  |
+
+Write endpoints require the `X-API-Key` header when `PAB_API_KEY` is set. Logic
+lives in `app/service.py` (framework-agnostic, unit-tested); `app/api.py` is a
+thin wrapper.
+
 ## Tests
 
 ```bash
