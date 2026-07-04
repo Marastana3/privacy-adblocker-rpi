@@ -69,6 +69,21 @@ Aggregate stats and top-blocked domains are available via `QueryStore.stats()`
 and `QueryStore.top_blocked_domains()` (the latter is empty unless the mode
 stored raw domains).
 
+## Policy controls
+
+**Category toggles.** Each blocklist file is a category (`ads`, `trackers`,
+`telemetry`, `custom`, …). Disable one to keep its list loaded but stop enforcing
+it — set `blocking.disabled_categories: ["telemetry"]` in config, or flip it at
+runtime with `BlockEngine.set_category_enabled("telemetry", False)`.
+
+**Runtime allow/block.** `ListManager` (`dns_engine/list_manager.py`) adds or
+removes domains from the whitelist or a `custom` blocklist, writing through to the
+files *and* the live engine so changes persist and take effect immediately.
+
+**Remote blocklists.** `RemoteBlocklistUpdater` (`dns_engine/updater.py`) fetches
+public lists (hosts or plain-domain format), parses and de-dupes them, and merges
+with your local entries. Configure sources under `blocking.remote_sources`.
+
 ## Requirements
 
 - Python 3.9+

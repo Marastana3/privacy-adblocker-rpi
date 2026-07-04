@@ -7,6 +7,11 @@ dns:
 
 blocking:
   blocklists_dir: "dns_engine/blocklists"
+  disabled_categories: []   # e.g. ["telemetry"] to keep those lists but stop blocking them
+  # Optional public lists to merge in via the updater (category: [urls]):
+  # remote_sources:
+  #   ads:
+  #     - "https://example.com/ads-hosts.txt"
 
 privacy:
   mode: "strict"          # strict | balanced | debug

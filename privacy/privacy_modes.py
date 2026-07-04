@@ -56,3 +56,20 @@ MODES = {
 
 def get_mode(name: str) -> PrivacyMode:
     return MODES.get(name.lower(), STRICT)
+
+
+def describe_retention(mode: PrivacyMode) -> str:
+    """A one-line, plain-language statement of what this mode persists.
+
+    Printed at startup so the operator has an explicit, informed view of what
+    the device will store about their network's DNS activity.
+    """
+    domains = "raw domains" if mode.store_raw_queries else "no domains"
+    ip_text = {
+        IP_POLICY_NONE: "no client IP",
+        IP_POLICY_TRUNCATE: "truncated client IP (network prefix only)",
+        IP_POLICY_RAW: "full client IP",
+    }.get(mode.client_ip_policy, "no client IP")
+    if not (mode.aggregate_stats or mode.store_raw_queries):
+        return f"mode '{mode.name}': persists nothing"
+    return f"mode '{mode.name}': stores {domains}, {ip_text}; aggregate stats on"

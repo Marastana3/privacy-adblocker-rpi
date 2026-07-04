@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional, Set
+from typing import Dict, Iterable, Optional, Set
 
 
 def _normalize(domain: str) -> str:
@@ -34,9 +34,25 @@ class BlockEngine:
     lookup costs O(number of labels in the query) regardless of how many
     domains are on the blocklists -- this scales to the 100k+ entry public
     lists without slowing down every DNS request.
+
+    Categories can be toggled off at runtime (e.g. keep ads blocked but allow
+    telemetry) without reloading the lists, and the whitelist/blocklist can be
+    edited in place; see ListManager for the persistent side of that.
     """
 
-    def __init__(self, categorized_blocklists: Dict[str, Set[str]]):
+    def __init__(
+        self,
+        categorized_blocklists: Dict[str, Set[str]],
+        disabled_categories: Optional[Iterable[str]] = None,
+    ):
+        self._disabled: Set[str] = {c.lower() for c in (disabled_categories or ())}
+        self.load(categorized_blocklists)
+
+    def load(self, categorized_blocklists: Dict[str, Set[str]]) -> None:
+        """(Re)build the in-memory rules from a categorized blocklist mapping.
+
+        Category enable/disable state is preserved across reloads.
+        """
         self.whitelist: Set[str] = {
             _normalize(domain)
             for domain in categorized_blocklists.get("whitelist", set())
@@ -44,11 +60,45 @@ class BlockEngine:
 
         # domain -> category, for every blocked domain across all categories.
         self.blocked: Dict[str, str] = {}
+        self.categories: Set[str] = set()
         for category, domains in categorized_blocklists.items():
             if category == "whitelist":
                 continue
+            self.categories.add(category)
             for domain in domains:
                 self.blocked[_normalize(domain)] = category
+
+    # -- category toggles ---------------------------------------------------
+
+    def set_category_enabled(self, category: str, enabled: bool) -> None:
+        category = category.lower()
+        if enabled:
+            self._disabled.discard(category)
+        else:
+            self._disabled.add(category)
+
+    def is_category_enabled(self, category: str) -> bool:
+        return category.lower() not in self._disabled
+
+    def enabled_categories(self) -> Set[str]:
+        return {c for c in self.categories if c not in self._disabled}
+
+    # -- runtime list edits (in-memory; ListManager persists to disk) -------
+
+    def add_blocked(self, domain: str, category: str = "custom") -> None:
+        self.blocked[_normalize(domain)] = category
+        self.categories.add(category)
+
+    def remove_blocked(self, domain: str) -> None:
+        self.blocked.pop(_normalize(domain), None)
+
+    def add_whitelisted(self, domain: str) -> None:
+        self.whitelist.add(_normalize(domain))
+
+    def remove_whitelisted(self, domain: str) -> None:
+        self.whitelist.discard(_normalize(domain))
+
+    # -- matching -----------------------------------------------------------
 
     def _match(self, domain: str, rules: Set[str]) -> Optional[str]:
         """Return the first parent of `domain` present in `rules`, else None."""
@@ -71,9 +121,11 @@ class BlockEngine:
                 reason=f"matched:{allow_match}",
             )
 
+        # Walk parent domains; skip matches whose category is disabled so a
+        # longer parent in an enabled category can still block.
         for candidate in _parent_domains(q):
             category = self.blocked.get(candidate)
-            if category is not None:
+            if category is not None and category not in self._disabled:
                 return BlockDecision(
                     blocked=True,
                     category=category,

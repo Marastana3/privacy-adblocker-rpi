@@ -27,11 +27,15 @@ The privacy modes now drive exactly what gets persisted. This is the thesis's co
 - ✅ Retention enforcement: honor `retention_days`, prune on startup + hourly background thread
 - ✅ Tests proving strict persists no domain/IP, balanced truncates IP, debug stores both (verified live end-to-end)
 
-## Phase 2 — Policy & consent layer  ⬜
-- ⬜ Per-category blocking toggles (enable/disable ads, trackers, telemetry independently)
-- ⬜ Whitelist/blacklist management (add/remove domains at runtime)
-- ⬜ Remote blocklist sources: fetch + auto-update from public lists, with local overrides
-- ⬜ Consent model: explicit control over what is logged/retained
+## Phase 2 — Policy & consent layer  ✅
+- ✅ Per-category blocking toggles — enable/disable ads/trackers/telemetry/custom
+  independently, at config load or runtime (`BlockEngine.set_category_enabled`)
+- ✅ Whitelist/blacklist management at runtime, persisted to the list files and
+  applied to the live engine (`dns_engine/list_manager.py`)
+- ✅ Remote blocklist sources: fetch + parse public hosts/plain lists, merge with
+  local entries (`dns_engine/updater.py`; fetcher injectable, parser tested offline)
+- ✅ Consent/transparency: startup disclosure of exactly what the active mode
+  retains (`describe_retention`)
 
 ## Phase 3 — FastAPI backend  ⬜
 - ⬜ REST API: stats, block history (privacy-filtered), config, privacy-mode control

@@ -1,11 +1,11 @@
 from __future__ import annotations
-from privacy.privacy_modes import PrivacyMode, get_mode
+from privacy.privacy_modes import PrivacyMode, describe_retention, get_mode
 
 import os
 import threading
 import time
-from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
 
 import yaml
 from dnslib import A, DNSHeader, DNSRecord, QTYPE, RCODE, RR
@@ -14,6 +14,7 @@ from dnslib.server import BaseResolver, DNSLogger, DNSServer
 from dns_engine.block_engine import BlockEngine
 from dns_engine.blocklist_loader import load_blocklists
 from dns_engine.forwarder import DNSForwarder
+from dns_engine.list_manager import ListManager
 from privacy.storage import QueryStore
 
 
@@ -28,6 +29,7 @@ class AppConfig:
     privacy_mode: str
     db_path: str
     retention_days: int
+    disabled_categories: List[str] = field(default_factory=list)
 
 
 def load_config(path: str) -> AppConfig:
@@ -48,6 +50,7 @@ def load_config(path: str) -> AppConfig:
         privacy_mode=str(privacy.get("mode", "strict")),
         db_path=str(privacy.get("db_path", "adblocker.db")),
         retention_days=int(privacy.get("retention_days", 7)),
+        disabled_categories=list(blocking.get("disabled_categories", []) or []),
     )
 
 
@@ -59,7 +62,10 @@ class PrivacyAdblockResolver(BaseResolver):
         store: Optional[QueryStore] = None,
     ):
         categorized_blocklists = load_blocklists(cfg.blocklists_dir)
-        self.block_engine = BlockEngine(categorized_blocklists)
+        self.block_engine = BlockEngine(
+            categorized_blocklists, disabled_categories=cfg.disabled_categories
+        )
+        self.list_manager = ListManager(cfg.blocklists_dir, self.block_engine)
         self.forwarder = DNSForwarder(cfg.upstream_dns, cfg.upstream_port)
         self.sinkhole_ip = cfg.sinkhole_ip
         self.privacy = privacy_mode
@@ -174,6 +180,7 @@ def main():
 
     privacy_mode = get_mode(cfg.privacy_mode)
     print(f"[PRIVACY] Mode: {privacy_mode.name}")
+    print(f"[PRIVACY] Retention: {describe_retention(privacy_mode)}")
 
     db_path = cfg.db_path
     if not os.path.isabs(db_path):
@@ -207,6 +214,10 @@ def main():
     print(f"[DNS] Upstream {cfg.upstream_dns}:{cfg.upstream_port}")
     print(f"[DNS] Blocklists dir: {cfg.blocklists_dir}")
     print(f"[DNS] Sinkhole IP: {cfg.sinkhole_ip}")
+    enabled = sorted(resolver.block_engine.enabled_categories())
+    print(f"[DNS] Active categories: {', '.join(enabled) or '(none)'}")
+    if cfg.disabled_categories:
+        print(f"[DNS] Disabled categories: {', '.join(cfg.disabled_categories)}")
     print("[DNS] Press Ctrl+C to stop.")
 
     try:
